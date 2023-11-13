@@ -11,31 +11,26 @@ def get_lr(optimizer):
 
 def fit_one_epoch(epoch, epochs, optimizer, model, lr_scheduler, train_iter, val_iter, train_data_loader, val_data_loader, loss_history, save_period=2, save_dir='checkpoints'):
     loss_ep = 0
-    train_data_loader.reset()
     print('---------------start training---------------')
     model.train()
     with tqdm(total=train_iter,desc=f'Epoch {epoch}/{epochs}',postfix=dict) as pbar:
-        for i in range(train_iter):
-            train_batch_loss = 0
-            img, bboxes, labels = train_data_loader()
-            targets = []
-            for j in range(img.shape[0]):
-                d = {}
-                d['boxes'] = bboxes[j]
-                d['labels'] = labels[j]
-                targets.append(d)
-            loss_dict = model(img, targets)
-            train_batch_loss = sum(loss for loss in loss_dict.values())
+        for img, label in train_data_loader:
+            loss = 0
+            output = model(img)
+
+
             optimizer.zero_grad()
-            train_batch_loss.backward()
-            loss_ep += float(train_batch_loss.data.cpu().numpy())
+            loss.backward()
+            loss_ep += float(loss.data.cpu().numpy())
             optimizer.step()
-            pbar.set_postfix(**{'batch_loss'    : train_batch_loss, 
+
+            pbar.set_postfix(**{'batch_loss'    : loss, 
                                 'lr'            : get_lr(optimizer)})
             pbar.update(1)
             lr_scheduler.step()
     loss_ep = loss_ep / train_iter
     print('epoch_loss:', loss_ep)
+    
     print('---------------start validate---------------')
     model.eval()
     with tqdm(total=val_iter,desc=f'Epoch {epoch}/{epochs}',postfix=dict) as pbar:

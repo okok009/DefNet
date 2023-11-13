@@ -5,9 +5,9 @@ import cv2
 import numpy as np
 import datetime
 from tqdm import tqdm
-from nets2.defnet import defnet18, defnet50
+from nets.defnet import defnet18, defnet50
 from torchvision import transforms
-from nets2.model import unt_defnet18, unt_defnet50
+from nets.model import unt_defnet18, unt_defnet50
 
 model = unt_defnet18()
 
@@ -29,10 +29,7 @@ lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones, 0.1)
 # data_loader
 # -----------------------------------
 to_tensor = transforms.ToTensor()
-# input = cv2.imread('Gaming_5000x3125.jpg')
-# input = cv2.resize(input, (100, 100))
-input = torch.rand([100, 100])
-input = to_tensor(input)
+input = torch.rand([3, 400, 400])
 input = input.unsqueeze(0)
 input = input.to(device=device)
 

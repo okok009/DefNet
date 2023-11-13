@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 
-from defnet import defnet18, defnet50
+from nets.defnet import defnet18, defnet50
 
 class Unet_model(nn.Module):
-    def __init__(self, backbone, in_channels_list, num_classes=2, out_channels_list=[64, 128, 256, 512], input_size=400):
+    def __init__(self, backbone, in_channels_list, num_classes=90, out_channels_list=[64, 128, 256, 512], input_size=400):
         super().__init__()
         self.final = nn.Conv2d(64, num_classes, 1)
         self.up_conv = nn.Sequential(
@@ -51,7 +51,7 @@ class Unet_Up(nn.Module):
         outputs = self.relu(outputs)
         return outputs
 
-def unt_defnet18(num_classes=2, pretrained_offical=False, pretrained_own=None):
+def unt_defnet18(num_classes=90, pretrained_offical=False, pretrained_own=None):
     '''
     num_classes : colorlabels的種類個數
 
@@ -73,7 +73,7 @@ def unt_defnet18(num_classes=2, pretrained_offical=False, pretrained_own=None):
     
     return model
 
-def unt_defnet50(num_classes=2, pretrained_offical=False, pretrained_own=None):
+def unt_defnet50(num_classes=90, pretrained_offical=False, pretrained_own=None):
     '''
     num_classes : colorlabels的種類個數
 
