@@ -1,23 +1,26 @@
 import datetime
 import torch
 import os
-from tqdm import tqdm
 import numpy as np
+from tqdm import tqdm
+from utils.score import loss_bce, miou
 
 
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
 
-def fit_one_epoch(epoch, epochs, optimizer, model, lr_scheduler, train_iter, val_iter, train_data_loader, val_data_loader, loss_history, save_period=2, save_dir='checkpoints'):
-    loss_ep = 0
+def fit_one_epoch(epoch, epochs, optimizer, model, lr_scheduler, train_iter, val_iter, train_data_loader, val_data_loader, loss_history, save_period=2, save_dir='checkpoints', device= 'cpu'):
     print('---------------start training---------------')
+    loss_ep = 0
     model.train()
-    with tqdm(total=train_iter,desc=f'Epoch {epoch}/{epochs}',postfix=dict) as pbar:
+    with tqdm(total=train_iter,desc=f'Epoch {epoch}/{epochs}') as pbar:
         for img, label in train_data_loader:
             loss = 0
+            img = img.to(device)
+            label = label.to(device)
             output = model(img)
-
+            loss = loss_bce(output=output, target=label, mode='train')
 
             optimizer.zero_grad()
             loss.backward()
@@ -29,25 +32,31 @@ def fit_one_epoch(epoch, epochs, optimizer, model, lr_scheduler, train_iter, val
             pbar.update(1)
             lr_scheduler.step()
     loss_ep = loss_ep / train_iter
-    print('epoch_loss:', loss_ep)
-    
     print('---------------start validate---------------')
+    val_loss = 0
+    mious = 0
     model.eval()
     with tqdm(total=val_iter,desc=f'Epoch {epoch}/{epochs}',postfix=dict) as pbar:
-        val_batch_loss, bbox_loss, class_loss = 0.0, 0.0, 0.0
         with torch.no_grad():
-            for i in range(val_iter):
-                img, bboxes, labels = val_data_loader()
-                pred = model(img)[0]
-                pred_bbox = pred['boxes']
-                pred_class = pred['labels']
+            for img, label in val_data_loader:
+                img = img.to(device)
+                label = label.to(device)
 
-                pbar.set_postfix(**{'val_loss'    : val_batch_loss/(i+1)})
+                output = model(img)
+
+                loss = loss_bce(output=output, target=label, mode='val')
+                val_loss += loss.data.cpu().numpy()
+                
+                mious += miou(output=output, target=label)
+
                 pbar.update(1)
 
-    # print(f'\ntrain loss:{train_batch_loss} || val loss:{val_batch_loss/(val_iter)}\n')
+    val_loss    = val_loss / val_iter
+    mious       = mious / val_iter
+
+    print(f'\ntrain loss:{loss_ep} || val loss:{val_loss}, val_miou:{mious}\n')
     loss_history.append_loss(epoch + 1, loss_ep)
-    # loss_history.append_loss(epoch + 1, train_batch_loss, val_loss / epoch_step_val)
+    loss_history.append_loss(epoch + 1, val_loss)
 
     if epoch % save_period == 0 or epoch == epochs:
         torch.save(model.state_dict(), os.path.join('E:/ray_workspace/fasterrcnn_desnet/'+save_dir, f'ep{epoch}-loss{loss_ep}.pth'))
