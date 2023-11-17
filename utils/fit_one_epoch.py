@@ -16,7 +16,6 @@ def fit_one_epoch(epoch, epochs, optimizer, model, lr_scheduler, train_iter, val
     model.train()
     with tqdm(total=train_iter,desc=f'Epoch {epoch}/{epochs}') as pbar:
         for img, label in train_data_loader:
-            loss = 0
             img = img.to(device)
             label = label.to(device)
             output = model(img)
@@ -60,4 +59,3 @@ def fit_one_epoch(epoch, epochs, optimizer, model, lr_scheduler, train_iter, val
 
     if epoch % save_period == 0 or epoch == epochs:
         torch.save(model.state_dict(), os.path.join('E:/ray_workspace/fasterrcnn_desnet/'+save_dir, f'ep{epoch}-loss{loss_ep}.pth'))
-        # torch.save(model.state_dict(), os.path.join(save_dir, 'ep%03d-loss%.3f-val_loss%.3f.pth' % (epoch, train_batch_loss)))
