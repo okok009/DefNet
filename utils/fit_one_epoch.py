@@ -51,12 +51,12 @@ def fit_one_epoch(epoch, epochs, optimizer, model, lr_scheduler, train_iter, val
 
                 pbar.update(1)
 
-    val_loss    = val_loss / val_iter
+    val_loss = val_loss / val_iter
     for i in range(num_classes):
-        mious[i] = total_iters[i]/total_unions[i]
-    mious = mious.mean()
+        mious[i] = 1.0*total_iters[i]/(total_unions[i]+2.220446049250313e-16)
+    mious = format(mious.mean(), '.6f')
 
-    print(f'\ntrain loss:{loss_ep} || val loss:{val_loss}, val_miou:{mious}\n')
+    print(f'\ntrain_loss:{loss_ep} || val_loss:{val_loss}, val_miou:{mious}\n')
     loss_history.append_loss(epoch + 1, loss=loss_ep, val_loss=val_loss)
 
     if epoch % save_period == 0 or epoch == epochs:

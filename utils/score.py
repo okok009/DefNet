@@ -31,7 +31,7 @@ def miou(output, target, total_iters=0, total_unions=0):
         f = target != i
         p = target == i
         pred_p = output == i
-        total_iters[i] += ((pred_p + p) == 2).sum()
-        total_unions[i] += p.sum() + ((f + pred_p) == 2).sum()
+        total_iters[i] += (pred_p * p).sum()
+        total_unions[i] += p.sum() + (f * pred_p).sum()
     
     return total_iters, total_unions

@@ -34,7 +34,7 @@ if __name__=='__main__':
     # -----------------------------------
     # optimizer
     # -----------------------------------
-    lr_rate = 0.01
+    lr_rate = 0.1
     milestones = [110000, 150000, 210000]
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params, lr=lr_rate, momentum=0.2)
@@ -49,10 +49,12 @@ if __name__=='__main__':
     val_label_path = 'E:/ray_workspace/fasterrcnn_desnet/COCODevKit/label_val/id_labels'
 
     batch_size = 10
-    epochs = 20
+    epochs = 50
     shuffle = True
     train_iter = 117266//batch_size
     val_iter = 4952
+    train_iter = 10000//batch_size
+    val_iter = 200
     hw = (400, 400)
     transform = v2.Compose([
         v2.ToDtype(torch.float32),

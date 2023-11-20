@@ -44,7 +44,7 @@ class SegDataset(Dataset):
 
 def dataloader(image_path: str, label_path: str, target_info: tuple, batch_size: int, mode: str, transform: v2.Transform = None, target_transform: v2.Transform = None,  shuffle: bool = None):
     dataset = SegDataset(image_path, label_path, target_info, mode, transform = transform, target_transform=target_transform)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=2)
 
     return dataloader
 
