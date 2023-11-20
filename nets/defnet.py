@@ -14,6 +14,7 @@ class DefNet(nn.Module):
         super().__init__()
 
         self.basicplanes = 64
+        self.block = block
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)

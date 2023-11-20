@@ -6,8 +6,8 @@ import numpy as np
 def loss_bce(output, target, mode):
     m = nn.Softmax(dim=1)
     output = m(output)
+    device = output.device
     if mode == 'val':
-        device = output.device
         target_t = torch.zeros(1, output.shape[2], output.shape[3], device=device)
         target_t = target_t == target
         for i in range(1, output.shape[1]):
@@ -16,25 +16,22 @@ def loss_bce(output, target, mode):
             target_t = torch.cat((target_t, class_filter), 1)
         target = target_t * 1.0
         target.to(device=device)
-    loss_fn = nn.BCELoss(torch.tensor([2]))
+    loss_fn = nn.BCELoss(torch.tensor([2], device=device))
     loss = loss_fn(output, target)
 
     return loss
 
-def miou(output, target):
+def miou(output, target, total_iters=0, total_unions=0):
     num_classes = output.shape[1]
     m = nn.Softmax(dim=1)
     output = m(output)
     _, output = torch.max(output, 1)
-
-    ious = np.zeros(num_classes)
+    output = output.unsqueeze(1)
     for i in range(num_classes):
         f = target != i
+        p = target == i
         pred_p = output == i
-        inter = pred_p.sum()
-        union = (target == i).sum() + (f == pred_p).sum()
-        ious[i] = (1.0*inter/(union+2.220446049250313e-16)).data.cpu()
+        total_iters[i] += ((pred_p + p) == 2).sum()
+        total_unions[i] += p.sum() + ((f + pred_p) == 2).sum()
     
-    miou = ious.mean()
-    
-    return miou
+    return total_iters, total_unions
