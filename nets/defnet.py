@@ -14,7 +14,6 @@ class DefNet(nn.Module):
         super().__init__()
 
         self.basicplanes = 64
-        self.block = block
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
@@ -60,7 +59,6 @@ class DefNet(nn.Module):
         feat1   = self.relu(x)
 
         x       = self.maxpool(feat1)
-
         feat2 = self.layer1(x)
         feat3 = self.layer2(feat2)
         feat4 = self.layer3(feat3)
@@ -69,7 +67,14 @@ class DefNet(nn.Module):
         return [feat1, feat2, feat3, feat4, feat5]
 
 class Def_Block_S(nn.Module):
+    '''sdefnet18和sdefnet34的基本block
+
+    . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+    1.若downsample不是none,表殘差分支需進行下採樣,而非identity
+    '''
     expansion = 1
+
     def __init__(self, basicplanes, channels, stride=1, downsample=None):
         super().__init__()
         if downsample:
@@ -82,10 +87,10 @@ class Def_Block_S(nn.Module):
 
         self.conv1 = nn.Conv2d(int(channels * in_channels_rate), channels, 3, stride, 1)
         self.bn1 = nn.BatchNorm2d(channels)
-        self.relu = nn.ReLU(inplace=True)
         self.offset = nn.Conv2d(channels, 2*9, 3, 1, 1)
-        self.dconv = torchvision.ops.DeformConv2d(channels, channels, 3, 1, 1) 
-        self.bn2 = nn.BatchNorm2d(channels) 
+        self.dconv = torchvision.ops.DeformConv2d(channels, channels * self.expansion, 3, 1, 1) 
+        self.bn2 = nn.BatchNorm2d(channels * self.expansion)
+        self.relu = nn.ReLU(inplace=True) 
 
     def forward(self, x):
         out = self.conv1(x)
@@ -101,7 +106,14 @@ class Def_Block_S(nn.Module):
         return out
 
 class Def_Block_SR(nn.Module):
+    '''srdefnet18和srdefnet34的基本block
+
+    . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+    1.若downsample不是none,表殘差分支需進行下採樣,而非identity
+    '''
     expansion = 1
+
     def __init__(self, basicplanes, channels, stride=1, downsample=None):
         super().__init__()
         if downsample:
@@ -114,10 +126,10 @@ class Def_Block_SR(nn.Module):
 
         self.conv1 = nn.Conv2d(int(channels * in_channels_rate), channels, 3, stride, 1)
         self.bn1 = nn.BatchNorm2d(channels)
-        self.relu = nn.ReLU(inplace=True)
         self.offset = nn.Conv2d(channels, 2*9, 3, 1, 1)
-        self.dconv = torchvision.ops.DeformConv2d(channels, channels, 3, 1, 1)
-        self.bn2 = nn.BatchNorm2d(channels)
+        self.dconv = torchvision.ops.DeformConv2d(channels, channels * self.expansion, 3, 1, 1)
+        self.bn2 = nn.BatchNorm2d(channels * self.expansion)
+        self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         
     def forward(self, x):
@@ -140,7 +152,14 @@ class Def_Block_SR(nn.Module):
         return out
 
 class Def_Block_R(nn.Module):
+    '''rdefnet18和rdefnet34的基本block
+
+    . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+    1.若downsample不是none,表殘差分支需進行下採樣,而非identity
+    '''
     expansion = 1
+
     def __init__(self, basicplanes, channels, stride=1, downsample=None):
         super().__init__()
         if downsample:
@@ -156,9 +175,9 @@ class Def_Block_R(nn.Module):
 
         self.conv1 = nn.Conv2d(int(channels * in_channels_rate), channels, 3, stride, 1)
         self.bn1 = nn.BatchNorm2d(channels)
+        self.conv2 = nn.Conv2d(channels, channels * self.expansion, 3, 1, 1)
+        self.bn2 = nn.BatchNorm2d(channels * self.expansion)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(channels, channels, 3, 1, 1)
-        self.bn2 = nn.BatchNorm2d(channels)
         self.downsample = downsample
 
     def forward(self, x):
@@ -179,7 +198,156 @@ class Def_Block_R(nn.Module):
         out = self.relu(out)
 
         return out
-    
+
+class Def_Bottle_S(nn.Module):
+    '''sdefnet50,sdefnet101和sdefnet152的基本block
+
+    . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+    1.若downsample不是none,表殘差分支需進行下採樣,而非identity
+    '''
+    expansion = 4
+
+    def __init__(self, basicplanes, channels, stride=1, downsample=None):
+        super().__init__()
+        if downsample:
+            if channels == basicplanes:
+                in_channels_rate = 1
+            else:
+                in_channels_rate = 2
+        else:
+            in_channels_rate = self.expansion
+
+        self.conv1 = nn.Conv2d(int(channels * in_channels_rate), channels, 1)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.offset = nn.Conv2d(channels, 2*9, 3, stride, 1)
+        self.dconv = torchvision.ops.DeformConv2d(channels, channels, 3, stride, 1) 
+        self.bn2 = nn.BatchNorm2d(channels)
+        self.conv2 = nn.Conv2d(channels, channels * self.expansion, 1)
+        self.bn3 = nn.BatchNorm2d(channels * self.expansion)
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        offset = self.offset(out)
+        out = self.dconv(out, offset)
+        out = self.bn2(out)
+
+        out = self.conv2(out)
+        out = self.bn3(out)
+
+        out = self.relu(out)
+
+        return out
+
+class Def_Bottle_SR(nn.Module):
+    '''srdefnet50,srdefnet101和srdefnet152的基本block
+
+    . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+    1.若downsample不是none,表殘差分支需進行下採樣,而非identity
+    '''
+    expansion = 4
+
+    def __init__(self, basicplanes, channels, stride=1, downsample=None):
+        super().__init__()
+        if downsample:
+            if channels == basicplanes:
+                in_channels_rate = 1
+            else:
+                in_channels_rate = 2
+        else:
+            in_channels_rate = self.expansion
+
+        self.conv1 = nn.Conv2d(int(channels * in_channels_rate), channels, 1)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.offset = nn.Conv2d(channels, 2*9, 3, stride, 1)
+        self.dconv = torchvision.ops.DeformConv2d(channels, channels, 3, stride, 1) 
+        self.bn2 = nn.BatchNorm2d(channels)
+        self.conv2 = nn.Conv2d(channels, channels * self.expansion, 1)
+        self.bn3 = nn.BatchNorm2d(channels * self.expansion)
+        self.relu = nn.ReLU(inplace=True)
+        self.downsample = downsample
+        
+    def forward(self, x):
+        identity = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        offset = self.offset(out)
+        out = self.dconv(out, offset)
+        out = self.bn2(out)
+
+        out = self.conv2(out)
+        out = self.bn3(out)
+
+        if self.downsample is not None:
+            identity = self.downsample(x)
+
+        out = out + identity
+        out = self.relu(out)
+
+        return out
+
+class Def_Bottle_R(nn.Module):
+    '''rdefnet50,rdefnet101和rdefnet152的基本block
+
+    . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+    1.若downsample不是none,表殘差分支需進行下採樣,而非identity
+    '''
+    expansion = 4
+
+    def __init__(self, basicplanes, channels, stride=1, downsample=None):
+        super().__init__()
+        if downsample:
+            if channels == basicplanes:
+                in_channels_rate = 1
+            else:
+                in_channels_rate = 2
+        else:
+            in_channels_rate = self.expansion
+
+        self.offset = nn.Conv2d(int(channels * in_channels_rate), 2*9, 3, 1, 1)
+        self.dconv = torchvision.ops.DeformConv2d(int(channels * in_channels_rate), int(channels * in_channels_rate), 3, 1, 1)
+
+        self.conv1 = nn.Conv2d(int(channels * in_channels_rate), channels, 1)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.conv2 = nn.Conv2d(channels, channels, 3, stride, 1)
+        self.bn2 = nn.BatchNorm2d(channels)
+        self.conv3 = nn.Conv2d(channels, channels * self.expansion, 1)
+        self.bn3 = nn.BatchNorm2d(channels * self.expansion)
+        self.relu = nn.ReLU(inplace=True)
+        self.downsample = downsample
+
+    def forward(self, x):
+        offset = self.offset(x)
+        d_out = self.dconv(x, offset)
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        if self.downsample is not None:
+            d_out = self.downsample(d_out)
+
+        out = d_out + out
+        out = self.relu(out)
+
+        return out 
+
 def sdefnet18(pretrained_own=False):
     '''
     pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
@@ -210,6 +378,26 @@ def rdefnet18(pretrained_own=False):
 
     return model
 
+def sdefnet34(pretrained_own=False):
+    '''
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    model = DefNet(Def_Block_S, [3, 4, 6, 3])
+    if pretrained_own:
+        model.load_state_dict(pretrained_own, strict=False)
+
+    return model
+
+def srdefnet34(pretrained_own=False):
+    '''
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    model = DefNet(Def_Block_SR, [3, 4, 6, 3])
+    if pretrained_own:
+        model.load_state_dict(pretrained_own, strict=False)
+
+    return model
+
 def rdefnet34(pretrained_own=False):
     '''
     pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
@@ -220,9 +408,98 @@ def rdefnet34(pretrained_own=False):
 
     return model
 
+def sdefnet50(pretrained_own=False):
+    '''
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    model = DefNet(Def_Bottle_S, [3, 4, 6, 3])
+    if pretrained_own:
+        model.load_state_dict(pretrained_own, strict=False)
+
+    return model
+
+def srdefnet50(pretrained_own=False):
+    '''
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    model = DefNet(Def_Bottle_SR, [3, 4, 6, 3])
+    if pretrained_own:
+        model.load_state_dict(pretrained_own, strict=False)
+
+    return model
+
+def rdefnet50(pretrained_own=False):
+    '''
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    model = DefNet(Def_Bottle_R, [3, 4, 6, 3])
+    if pretrained_own:
+        model.load_state_dict(pretrained_own, strict=False)
+
+    return model
+
+def sdefnet101(pretrained_own=False):
+    '''
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    model = DefNet(Def_Bottle_S, [3, 4, 23, 3])
+    if pretrained_own:
+        model.load_state_dict(pretrained_own, strict=False)
+
+    return model
+
+def srdefnet101(pretrained_own=False):
+    '''
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    model = DefNet(Def_Bottle_SR, [3, 4, 23, 3])
+    if pretrained_own:
+        model.load_state_dict(pretrained_own, strict=False)
+
+    return model
+
+def rdefnet101(pretrained_own=False):
+    '''
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    model = DefNet(Def_Bottle_R, [3, 4, 23, 3])
+    if pretrained_own:
+        model.load_state_dict(pretrained_own, strict=False)
+
+    return model
+
+def sdefnet152(pretrained_own=False):
+    '''
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    model = DefNet(Def_Bottle_S, [3, 8, 36, 3])
+    if pretrained_own:
+        model.load_state_dict(pretrained_own, strict=False)
+
+    return model
+
+def srdefnet152(pretrained_own=False):
+    '''
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    model = DefNet(Def_Bottle_SR, [3, 8, 36, 3])
+    if pretrained_own:
+        model.load_state_dict(pretrained_own, strict=False)
+
+    return model
+
+def rdefnet152(pretrained_own=False):
+    '''
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    model = DefNet(Def_Bottle_R, [3, 8, 36, 3])
+    if pretrained_own:
+        model.load_state_dict(pretrained_own, strict=False)
+
+    return model
 if __name__ == '__main__':
     input_test = torch.randn(1,3,400,400)
-    model = rdefnet34(pretrained_own=False)
+    model = rdefnet50(pretrained_own=False)
     ooo = model(input_test)
     print(len(ooo))
     print(ooo[0].shape)

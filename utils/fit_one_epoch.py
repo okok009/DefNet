@@ -60,4 +60,4 @@ def fit_one_epoch(epoch, epochs, optimizer, model, lr_scheduler, train_iter, val
     loss_history.append_loss(epoch + 1, loss=loss_ep, val_loss=val_loss)
 
     if epoch % save_period == 0 or epoch == epochs:
-        torch.save(model.state_dict(), os.path.join('E:/ray_workspace/defnet/'+save_dir, f'ep{epoch}-val_loss{val_loss}-miou{mious}.pth'))
+        torch.save(model.state_dict(), os.path.join('E:/ray_workspace/defnet', save_dir, f'ep{epoch}-val_loss{val_loss}-miou{mious}.pth'))

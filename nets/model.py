@@ -1,7 +1,11 @@
 import torch
 import torch.nn as nn
 
-from nets.defnet import sdefnet18, srdefnet18, rdefnet18, rdefnet34
+from nets.defnet import sdefnet18, srdefnet18, rdefnet18
+from nets.defnet import sdefnet34, srdefnet34, rdefnet34
+from nets.defnet import sdefnet50, srdefnet50, rdefnet50
+from nets.defnet import sdefnet101, srdefnet101, rdefnet101
+from nets.defnet import sdefnet152, srdefnet152, rdefnet152
 
 class Unet_model(nn.Module):
     def __init__(self, backbone, in_channels_list, num_classes=2, out_channels_list=[64, 128, 256, 512], input_size=400):
@@ -99,6 +103,38 @@ def unt_rdefnet18(num_classes=2, pretrained_own=None):
     
     return model
 
+def unt_sdefnet34(num_classes=2, pretrained_own=None):
+    '''
+    num_classes : colorlabels的種類個數
+
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    in_channels_list = [192, 320, 640, 768]
+    
+    if pretrained_own:
+        model = Unet_model(sdefnet34(), in_channels_list, num_classes=num_classes)
+        model.load_state_dict(pretrained_own)
+    else:
+        model = Unet_model(sdefnet34(), in_channels_list, num_classes=num_classes)
+    
+    return model
+
+def unt_srdefnet34(num_classes=2, pretrained_own=None):
+    '''
+    num_classes : colorlabels的種類個數
+
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    in_channels_list = [192, 320, 640, 768]
+    
+    if pretrained_own:
+        model = Unet_model(srdefnet34(), in_channels_list, num_classes=num_classes)
+        model.load_state_dict(pretrained_own)
+    else:
+        model = Unet_model(srdefnet34(), in_channels_list, num_classes=num_classes)
+    
+    return model
+
 def unt_rdefnet34(num_classes=2, pretrained_own=None):
     '''
     num_classes : colorlabels的種類個數
@@ -115,7 +151,151 @@ def unt_rdefnet34(num_classes=2, pretrained_own=None):
     
     return model
 
+def unt_sdefnet50(num_classes=2, pretrained_own=None):
+    '''
+    num_classes : colorlabels的種類個數
+
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    in_channels_list = [192, 512, 1024, 3072]
+    
+    if pretrained_own:
+        model = Unet_model(sdefnet50(), in_channels_list, num_classes=num_classes)
+        model.load_state_dict(pretrained_own)
+    else:
+        model = Unet_model(sdefnet50(), in_channels_list, num_classes=num_classes)
+    
+    return model
+
+def unt_srdefnet50(num_classes=2, pretrained_own=None):
+    '''
+    num_classes : colorlabels的種類個數
+
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    in_channels_list = [192, 512, 1024, 3072]
+    
+    if pretrained_own:
+        model = Unet_model(srdefnet50(), in_channels_list, num_classes=num_classes)
+        model.load_state_dict(pretrained_own)
+    else:
+        model = Unet_model(srdefnet50(), in_channels_list, num_classes=num_classes)
+    
+    return model
+
+def unt_rdefnet50(num_classes=2, pretrained_own=None):
+    '''
+    num_classes : colorlabels的種類個數
+
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    in_channels_list = [192, 512, 1024, 3072]
+    
+    if pretrained_own:
+        model = Unet_model(rdefnet50(), in_channels_list, num_classes=num_classes)
+        model.load_state_dict(pretrained_own)
+    else:
+        model = Unet_model(rdefnet50(), in_channels_list, num_classes=num_classes)
+    
+    return model
+
+def unt_sdefnet101(num_classes=2, pretrained_own=None):
+    '''
+    num_classes : colorlabels的種類個數
+
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    in_channels_list = [192, 512, 1024, 3072]
+    
+    if pretrained_own:
+        model = Unet_model(sdefnet101(), in_channels_list, num_classes=num_classes)
+        model.load_state_dict(pretrained_own)
+    else:
+        model = Unet_model(sdefnet101(), in_channels_list, num_classes=num_classes)
+    
+    return model
+
+def unt_srdefnet101(num_classes=2, pretrained_own=None):
+    '''
+    num_classes : colorlabels的種類個數
+
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    in_channels_list = [192, 512, 1024, 3072]
+    
+    if pretrained_own:
+        model = Unet_model(srdefnet101(), in_channels_list, num_classes=num_classes)
+        model.load_state_dict(pretrained_own)
+    else:
+        model = Unet_model(srdefnet101(), in_channels_list, num_classes=num_classes)
+    
+    return model
+
+def unt_rdefnet101(num_classes=2, pretrained_own=None):
+    '''
+    num_classes : colorlabels的種類個數
+
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    in_channels_list = [192, 512, 1024, 3072]
+    
+    if pretrained_own:
+        model = Unet_model(rdefnet101(), in_channels_list, num_classes=num_classes)
+        model.load_state_dict(pretrained_own)
+    else:
+        model = Unet_model(rdefnet101(), in_channels_list, num_classes=num_classes)
+    
+    return model
+
+def unt_sdefnet152(num_classes=2, pretrained_own=None):
+    '''
+    num_classes : colorlabels的種類個數
+
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    in_channels_list = [192, 512, 1024, 3072]
+    
+    if pretrained_own:
+        model = Unet_model(sdefnet152(), in_channels_list, num_classes=num_classes)
+        model.load_state_dict(pretrained_own)
+    else:
+        model = Unet_model(sdefnet152(), in_channels_list, num_classes=num_classes)
+    
+    return model
+
+def unt_srdefnet152(num_classes=2, pretrained_own=None):
+    '''
+    num_classes : colorlabels的種類個數
+
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    in_channels_list = [192, 512, 1024, 3072]
+    
+    if pretrained_own:
+        model = Unet_model(srdefnet152(), in_channels_list, num_classes=num_classes)
+        model.load_state_dict(pretrained_own)
+    else:
+        model = Unet_model(srdefnet152(), in_channels_list, num_classes=num_classes)
+    
+    return model
+
+def unt_rdefnet152(num_classes=2, pretrained_own=None):
+    '''
+    num_classes : colorlabels的種類個數
+
+    pretrained_own : 非None表要載入自己的權重(權重檔的相對位置)
+    '''
+    in_channels_list = [192, 512, 1024, 3072]
+    
+    if pretrained_own:
+        model = Unet_model(rdefnet152(), in_channels_list, num_classes=num_classes)
+        model.load_state_dict(pretrained_own)
+    else:
+        model = Unet_model(rdefnet152(), in_channels_list, num_classes=num_classes)
+    
+    return model
+
 if __name__ == '__main__':
     input_test = torch.randn(1,3,400,400)
-    model = unt_rdefnet34(num_classes=2, pretrained_own=False)
+    model = unt_sdefnet18(num_classes=2, pretrained_own=False)
     print(model(input_test).shape)

@@ -1,12 +1,14 @@
 import torch
 import cv2
 import numpy as np
+import torchvision
 from torchvision import transforms
 from nets.model import unt_rdefnet34, unt_sdefnet18, unt_srdefnet18, unt_rdefnet18
 from utils.palette import palette
 from utils.score import loss_bce
 from data.dataset import dataloader
 from torchvision.transforms import v2
+torchvision.disable_beta_transforms_warning()
 
 # -----------------------------------
 # device
@@ -18,8 +20,8 @@ else:
     device = torch.device("cpu")
 
 if __name__ == "__main__":
-    weights = 'checkpoints/ep2-loss0.0485747023217943.pth'
-    model = unt_rdefnet34(num_classes=91, pretrained_own=weights)
+    weights = 'checkpoints/ep70-val_loss0.15663308305200188-miou0.023155.pth'
+    model = unt_rdefnet18(num_classes=91, pretrained_own=weights)
     model = model.to(device)
     model.eval()
     hw = (400, 400)
@@ -34,33 +36,24 @@ if __name__ == "__main__":
         v2.Resize(hw, antialias=True)
     ])
     target_info = (90+1, hw[0], hw[1])
-    val_data_loader     = dataloader(val_img_path, val_label_path, target_info, 1, 'train', transform, target_transform)
-    _, target = next(iter(val_data_loader))
-    print(target.shape)
-    target = target.to(device)
+    val_data_loader     = dataloader(val_img_path, val_label_path, target_info, 1, 'val', transform, target_transform)
+    for img, target in val_data_loader:
+        target = target.to(device)
 
+        img = img.to(device)
 
-    img = 'E:/ray_workspace/fasterrcnn_desnet/COCODevKit/val2017/000000001296.jpg'
-    img = cv2.imread(img)
-    hw = img.shape[:2]
-    img = cv2.resize(img, (400, 400))
+        output = model(img)
+        loss = loss_bce(output=output, target=target, mode='val')
 
-    img[:, :, ::1] = img[:, :, ::-1]
-
-    to_tensor = transforms.ToTensor()
-    img_t = to_tensor(img)
-    img_t = torch.unsqueeze(img_t, dim=0)
-    img_t.requires_grad = True
-    img_t = img_t.to(device)
-
-    output = model(img_t)
-    loss = loss_bce(output=output, target=target, mode='val')
-    print(loss)
-
-    img[:, :, ::1] = img[:, :, ::-1]
-    pred = palette(output)
-    print(img.shape)
-    print(pred.shape)
-    pred = cv2.addWeighted(src1=img, alpha=0.4, src2=pred, beta=0.8, gamma=0.0, dtype=cv2.CV_8UC3)
-    cv2.imshow('pred', pred)
-    cv2.waitKey(0)
+        pred, indxs = palette(output)
+        img = img.squeeze(0).permute(1, 2, 0).cpu().numpy()
+        img = img * 255
+        img[:, :, ::1] = img[:, :, ::-1]
+        pred = cv2.addWeighted(src1=img, alpha=0.5, src2=pred, beta=10, gamma=0.0, dtype=cv2.CV_8UC3)
+        for i in range(0, pred.shape[0], 100):
+            for j in range(0, pred.shape[1], 100):
+                if int(indxs[i, j]) != 0:
+                    pred = cv2.rectangle(pred, (i, j-30), (i+50, j), (0, 0, 0), -1)
+                    pred = cv2.putText(pred, str(int(indxs[i, j])), (i, j), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.imshow('pred', pred)
+        cv2.waitKey(0)

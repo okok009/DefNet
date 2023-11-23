@@ -16,7 +16,9 @@ def loss_bce(output, target, mode):
             target_t = torch.cat((target_t, class_filter), 1)
         target = target_t * 1.0
         target.to(device=device)
-    loss_fn = nn.BCELoss(torch.tensor([2], device=device))
+    loss_weight = torch.ones_like(output, device=device) * 10
+    loss_weight[0, 0] = loss_weight[0, 0] * (1/10)
+    loss_fn = nn.BCELoss(loss_weight)
     loss = loss_fn(output, target)
 
     return loss
